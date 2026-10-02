@@ -9,62 +9,39 @@ st.set_page_config(
 
 st.title("🧠 ZEROBOARD AI")
 st.caption("AI経営会議システム")
-st.write("あなたがCEO。AI役員が議論し、最終判断はあなたが行います。")
+st.write("あなたがCEO。4人のAI役員が議論し、最後に議長AIが経営判断をまとめます。")
 st.divider()
 
+# OpenAI接続
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+# 結果を保存する場所
+if "meeting_result" not in st.session_state:
+    st.session_state.meeting_result = None
+
+if "last_topic" not in st.session_state:
+    st.session_state.last_topic = ""
 
 topic = st.text_area(
     "CEO、今日の議題を入力してください",
-    placeholder="例：AIを使って月10万円を目指せる新規事業を考える",
+    placeholder="例：AIを使って月10万円の利益を作れる新規事業を考える",
     height=120
 )
 
-members = {
-    "💡 新規事業担当": """
-あなたは新規事業責任者です。
-固定観念にとらわれず、収益化できる具体的なアイデアを考えてください。
-初期費用、収益モデル、最初の行動まで具体化してください。
-""",
-
-    "📣 マーケティング担当": """
-あなたはマーケティング責任者です。
-誰に、何を、どう売るかを考えてください。
-集客方法、販売方法、差別化、最初の顧客獲得方法を具体化してください。
-""",
-
-    "💰 財務担当": """
-あなたは財務責任者です。
-利益、コスト、必要資金、収益化までの期間を重視してください。
-数字を可能な範囲で具体的に示してください。
-""",
-
-    "🛠 実行・技術担当": """
-あなたは実行責任者兼技術責任者です。
-実際に実現できるかを検討してください。
-必要なツール、作業、技術、最初の7日間の行動を具体化してください。
-""",
-
-    "⚠️ リスク担当": """
-あなたは厳しいリスク管理責任者です。
-他の役員が見落としそうな問題を探してください。
-失敗要因、法的・金銭的・競争上のリスクと、その対策を提示してください。
-"""
-}
-
-
 def ask_ai(role, topic):
     response = client.responses.create(
-        model="gpt-6-luna",
+        model="gpt-5-mini",
         instructions=role,
         input=f"""
-CEOからの議題：
+経営会議の議題：
 {topic}
 
 日本語で回答してください。
-抽象論ではなく、CEOが実際に判断できる具体性を重視してください。
-""",
+具体的で実行可能な意見を出してください。
+結論だけでなく、その理由も簡潔に説明してください。
+"""
     )
+
     return response.output_text
 
 
@@ -72,76 +49,138 @@ if st.button("🚀 AI経営会議を開始", type="primary"):
 
     if not topic.strip():
         st.warning("まず議題を入力してください。")
-        st.stop()
 
-    opinions = {}
+    else:
+        try:
+            with st.spinner("AI役員が会議中..."):
 
-    try:
-        with st.spinner("AI役員5名が分析中..."):
-            for name, role in members.items():
-                opinions[name] = ask_ai(role, topic)
+                strategy = ask_ai(
+                    """
+あなたはZEROBOARD AIの戦略担当役員です。
+市場機会、競争優位、事業モデル、成長可能性の観点から
+CEOの議題を分析してください。
+""",
+                    topic
+                )
 
-        st.success("役員の一次分析が完了しました。")
+                marketing = ask_ai(
+                    """
+あなたはZEROBOARD AIのマーケティング担当役員です。
+顧客、集客、販売方法、価格、ブランドの観点から
+CEOの議題を分析してください。
+""",
+                    topic
+                )
 
-        st.header("🏢 AI役員会")
+                finance = ask_ai(
+                    """
+あなたはZEROBOARD AIの財務担当役員です。
+必要資金、売上、利益、コスト、採算性の観点から
+CEOの議題を分析してください。
+数字を使えるところは具体的に示してください。
+""",
+                    topic
+                )
 
-        for name, opinion in opinions.items():
-            with st.expander(name, expanded=True):
-                st.write(opinion)
+                risk = ask_ai(
+                    """
+あなたはZEROBOARD AIのリスク担当役員です。
+失敗要因、法的リスク、競合、実行上の問題、
+見落としやすい点を厳しく分析してください。
+""",
+                    topic
+                )
 
-        meeting_text = "\n\n".join(
-            f"【{name}】\n{opinion}"
-            for name, opinion in opinions.items()
-        )
-
-        with st.spinner("役員の意見を比較し、議長AIが最終提案を作成中..."):
-
-            final_response = client.responses.create(
-                model="gpt-6-luna",
-                instructions="""
+                chairman_prompt = f"""
 あなたはZEROBOARD AIの議長です。
 
-複数のAI役員の意見を鵜呑みにせず、
-一致点・対立点・弱点を比較してください。
-
-CEOの代わりに最終決定してはいけません。
-CEOが自分で判断できる材料を作ってください。
-
-以下の順番で日本語でまとめてください。
-
-1. 最も有望な具体案
-2. 各役員の一致点
-3. 意見が割れたポイント
-4. 想定収益モデル
-5. 主なリスク
-6. 最初の7日間の行動計画
-7. CEOが最終判断する前に確認すべきこと
-""",
-                input=f"""
 CEOの議題：
 {topic}
 
-各AI役員の一次分析：
-{meeting_text}
+以下は4人のAI役員の意見です。
+
+【戦略担当】
+{strategy}
+
+【マーケティング担当】
+{marketing}
+
+【財務担当】
+{finance}
+
+【リスク担当】
+{risk}
+
+これらを統合してCEO向けの最終経営判断を作ってください。
+
+必ず以下の形式で回答してください。
+
+## 🎯 経営判断
+実行すべきか、修正すべきか、見送るべきかを説明
+
+## 💡 理由
+重要な理由を整理
+
+## 💰 収益モデル
+どうやって利益を作るか
+
+## ⚠️ 最大のリスク
+最も注意すべき問題
+
+## 🚀 最初の一歩
+CEOが今日からできる具体的な行動
+
+## 📅 7日間アクションプラン
+Day1〜Day7まで具体的に提示
 """
-            )
 
-        st.divider()
-        st.header("📋 議長AI 最終提案")
-        st.write(final_response.output_text)
+                final = client.responses.create(
+                    model="gpt-5-mini",
+                    input=chairman_prompt
+                ).output_text
 
-        st.divider()
-        st.header("👑 CEO最終判断")
-        st.info("AIは提案まで。最終決定はCEOであるあなたが行います。")
+                # 結果を保存
+                st.session_state.last_topic = topic
 
-        decision = st.radio(
-            "この案件をどうしますか？",
-            ["未決定", "✅ 採用", "⏸️ 保留", "❌ 却下"]
-        )
+                st.session_state.meeting_result = {
+                    "strategy": strategy,
+                    "marketing": marketing,
+                    "finance": finance,
+                    "risk": risk,
+                    "final": final
+                }
 
-        if decision != "未決定":
-            st.success(f"CEO判断：{decision}")
+        except Exception as e:
+            st.error("AIとの通信でエラーが発生しました。")
+            st.code(str(e))
 
-    except Exception as e:
-        st.error("AIとの接続でエラーが発生しました。")
-        st.code(str(e))
+
+# 保存された結果を表示
+if st.session_state.meeting_result:
+
+    result = st.session_state.meeting_result
+
+    st.divider()
+    st.header("🏢 AI経営会議")
+
+    st.subheader("📋 議題")
+    st.write(st.session_state.last_topic)
+
+    with st.expander("🧠 戦略担当役員"):
+        st.markdown(result["strategy"])
+
+    with st.expander("📣 マーケティング担当役員"):
+        st.markdown(result["marketing"])
+
+    with st.expander("💰 財務担当役員"):
+        st.markdown(result["finance"])
+
+    with st.expander("⚠️ リスク担当役員"):
+        st.markdown(result["risk"])
+
+    st.divider()
+
+    st.header("👑 議長AI 最終判断")
+    st.markdown(result["final"])
+
+    st.success("AI経営会議が完了しました。")
