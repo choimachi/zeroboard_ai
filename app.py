@@ -21,6 +21,8 @@ if "meeting_result" not in st.session_state:
 
 if "last_topic" not in st.session_state:
     st.session_state.last_topic = ""
+if "meeting_history" not in st.session_state:
+    st.session_state.meeting_history = []
 
 topic = st.text_area(
     "CEO、今日の議題を入力してください",
@@ -248,6 +250,10 @@ Day1〜Day7まで具体的に提示
                     "risk": risk,
                     "final": final
                 }
+                st.session_state.meeting_history.append({
+    "topic": topic,
+    "final": final
+})
 
         except Exception as e:
             st.error("AIとの通信でエラーが発生しました。")
@@ -283,3 +289,16 @@ if st.session_state.meeting_result:
     st.markdown(result["final"])
 
     st.success("AI経営会議が完了しました。")
+
+st.divider()
+st.header("📚 過去のAI経営会議")
+
+if st.session_state.meeting_history:
+    for i, meeting in enumerate(
+        reversed(st.session_state.meeting_history),
+        1
+    ):
+        with st.expander(f"会議 {i}：{meeting['topic']}"):
+            st.markdown(meeting["final"])
+else:
+    st.caption("まだ会議履歴はありません。")
