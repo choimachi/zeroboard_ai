@@ -259,6 +259,10 @@ Day1〜Day7まで具体的に提示
     "topic": topic,
     "final": final
 })
+                supabase.table("meeting_history").insert({
+    "topic": topic,
+    "final": final
+}).execute()
 
         except Exception as e:
             st.error("AIとの通信でエラーが発生しました。")
