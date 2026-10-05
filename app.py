@@ -25,6 +25,18 @@ elif supabase_key.startswith("sb_secret_"):
 else:
     st.write("Key type: other")
 supabase = create_client(supabase_url, supabase_key)
+if st.button("Supabase保存テスト"):
+    try:
+        supabase.table("meeting_history").insert({
+            "topic": "Streamlitテスト",
+            "final": "保存成功"
+        }).execute()
+
+        st.success("Supabaseへの保存成功！")
+
+    except Exception as e:
+        st.error("Supabase保存エラー")
+        st.code(str(e))
 st.write("Supabase URL:", supabase_url)
 
 # 結果を保存する場所
