@@ -18,26 +18,7 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 supabase_url = st.secrets["SUPABASE_URL"]
 supabase_key = st.secrets["SUPABASE_KEY"]
-if supabase_key.startswith("sb_publishable_"):
-    st.write("Key type: publishable")
-elif supabase_key.startswith("sb_secret_"):
-    st.write("Key type: secret")
-else:
-    st.write("Key type: other")
 supabase = create_client(supabase_url, supabase_key)
-if st.button("Supabase保存テスト"):
-    try:
-        supabase.table("meeting_history").insert({
-            "topic": "Streamlitテスト",
-            "final": "保存成功"
-        }).execute()
-
-        st.success("Supabaseへの保存成功！")
-
-    except Exception as e:
-        st.error("Supabase保存エラー")
-        st.code(str(e))
-st.write("Supabase URL:", supabase_url)
 
 # 結果を保存する場所
 if "meeting_result" not in st.session_state:
