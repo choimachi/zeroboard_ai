@@ -18,6 +18,7 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 supabase_url = st.secrets["SUPABASE_URL"]
 supabase_key = st.secrets["SUPABASE_KEY"]
+st.write("Key type:", supabase_key[:3])
 supabase = create_client(supabase_url, supabase_key)
 st.write("Supabase URL:", supabase_url)
 
