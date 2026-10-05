@@ -1,3 +1,4 @@
+print("=== ZEROBOARD APP START ===")
 import streamlit as st
 from openai import OpenAI
 from supabase import create_client
