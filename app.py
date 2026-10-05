@@ -1,5 +1,6 @@
 import streamlit as st
 from openai import OpenAI
+from supabase import create_client
 
 st.set_page_config(
     page_title="ZEROBOARD AI",
@@ -14,6 +15,10 @@ st.divider()
 
 # OpenAI接続
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+supabase_url = st.secrets["SUPABASE_URL"]
+supabase_key = st.secrets["SUPABASE_KEY"]
+supabase = create_client(supabase_url, supabase_key)
 
 # 結果を保存する場所
 if "meeting_result" not in st.session_state:
